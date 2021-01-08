@@ -209,7 +209,7 @@
               </a>
             </el-tooltip>
             <el-select class="received-type-select" size="small" v-model="receivedMsgType">
-              <el-option v-for="(type, index) in payloadOptions" :key="index" :value="type"> </el-option>
+              <el-option v-for="(type, index) in payloadOptions" :key="index" :value="type"></el-option>
             </el-select>
             <el-radio-group v-model="msgType" size="mini" @change="handleMsgTypeChanged">
               <el-radio-button label="all">{{ $t('connections.all') }}</el-radio-button>
@@ -322,6 +322,9 @@ import {
 } from './types'
 import { ScriptModel, ScriptState } from '../script/types'
 import sandbox from '@/utils/sandbox'
+import { IotProtocolUtil } from '@/utils/IotProtocolUtil'
+import { DeviceIdCodeUtil } from '@/utils/DeviceIdCodeUtil'
+import IotFormatUtil from '@/utils/IotFormatUtil'
 
 type CommandType =
   | 'searchContent'
@@ -388,7 +391,7 @@ export default class ConnectionsDetail extends Vue {
 
   private sendFrequency: number | undefined = undefined
   private sendTimeId: number | null = null
-  private receivedMsgType: PayloadType = 'Plaintext'
+  private receivedMsgType: PayloadType = 'Iot'
   private msgType: MessageType = 'all'
   private client: Partial<MqttClient> = {
     connected: false,
@@ -411,7 +414,7 @@ export default class ConnectionsDetail extends Vue {
     '3.1.1': 4,
     '5.0': 5,
   }
-  private payloadOptions: PayloadType[] = ['Plaintext', 'Base64', 'JSON', 'Hex']
+  private payloadOptions: PayloadType[] = ['Iot', 'Plaintext', 'Base64', 'JSON', 'Hex']
   private showContextmenu: boolean = false
   private selectedMessage: MessageModel | null = null
   private contextmenuConfig: ContextmenuModel = {
@@ -524,6 +527,7 @@ export default class ConnectionsDetail extends Vue {
       this.client.on('message', this.onMessageArrived(id))
     }
   }
+
   // Delete connection
   public removeConnection(currentConnection?: ConnectionModel) {
     let { id, name } = this.record
@@ -547,6 +551,7 @@ export default class ConnectionsDetail extends Vue {
         // ignore(error)
       })
   }
+
   // Clearn interval
   public stopTimedSend() {
     const timedMessageRef: TimedMessage = this.$refs.timedMessage as TimedMessage
@@ -560,6 +565,7 @@ export default class ConnectionsDetail extends Vue {
       this.$message.success(this.$t('connections.stopTimedMessage') as string)
     }
   }
+
   // Set messages list height
   public setMessageListHeight() {
     const connectionFooter: HTMLElement = this.$refs.connectionFooter as HTMLElement
@@ -593,6 +599,7 @@ export default class ConnectionsDetail extends Vue {
       this.showContextmenu = false
     }
   }
+
   // Copy message
   private handleCopyMessage() {
     if (this.selectedInfo) {
@@ -606,6 +613,7 @@ export default class ConnectionsDetail extends Vue {
       )
     }
   }
+
   // Delete message
   private async handleDeleteMessage() {
     const connectID = this.record.id
@@ -623,6 +631,7 @@ export default class ConnectionsDetail extends Vue {
       this.$message.error(this.$t('common.deletefailed') as string)
     }
   }
+
   // Get current connection
   private getConnectionValue(id: string) {
     const currentActiveConnection:
@@ -647,11 +656,13 @@ export default class ConnectionsDetail extends Vue {
       }
     }
   }
+
   // Show subscription list
   private handleShowSubs() {
     this.showSubs = !this.showSubs
     this.changeShowSubscriptions({ showSubscriptions: this.showSubs })
   }
+
   // Collapse top client info
   private handleCollapse(id: string) {
     this.showClientInfo = !this.showClientInfo
@@ -660,10 +671,12 @@ export default class ConnectionsDetail extends Vue {
       showClientInfo: this.showClientInfo,
     })
   }
+
   // New window
   private handleNewWindow() {
     ipcRenderer.send('newWindow', this.$route.params.id)
   }
+
   // Dropdown command
   private handleCommand(command: CommandType) {
     switch (command) {
@@ -698,6 +711,7 @@ export default class ConnectionsDetail extends Vue {
         break
     }
   }
+
   // Route to edit page
   private handleEdit(id: string): boolean | void {
     if (this.client.connected) {
@@ -708,12 +722,14 @@ export default class ConnectionsDetail extends Vue {
       query: { oper: 'edit' },
     })
   }
+
   // Return messages
   private getMessages() {
     this.messagesAddedNewItem = false
     this.msgType = 'all'
     this.messages = _.cloneDeep(this.record.messages)
   }
+
   // Clear messages
   private handleMsgClear() {
     this.messages = []
@@ -725,6 +741,7 @@ export default class ConnectionsDetail extends Vue {
     })
     updateConnection(this.record.id as string, this.record)
   }
+
   // Message type changed
   private async handleMsgTypeChanged(type: MessageType) {
     this.messagesAddedNewItem = false
@@ -749,6 +766,7 @@ export default class ConnectionsDetail extends Vue {
       setChangedMessages(type, this.record.messages)
     }
   }
+
   // Search messages
   private async searchContent() {
     this.scrollToBottom()
@@ -773,11 +791,13 @@ export default class ConnectionsDetail extends Vue {
       }
     }
   }
+
   // Delete topic item
   private handleTopicDelete() {
     this.getMessages()
     this.scrollToBottom()
   }
+
   // Click topic item
   private async handleTopicClick(sub: SubscriptionModel, reset: boolean) {
     this.getMessages()
@@ -796,6 +816,7 @@ export default class ConnectionsDetail extends Vue {
     }
     this.searchContent()
   }
+
   private handleSearchOpen() {
     this.searchVisible = true
     const $el = document.getElementById('searchTopic')
@@ -805,6 +826,7 @@ export default class ConnectionsDetail extends Vue {
       }
     })
   }
+
   // Close search bar
   private async handleSearchClose() {
     this.searchVisible = false
@@ -824,17 +846,20 @@ export default class ConnectionsDetail extends Vue {
     }
     this.scrollToBottom()
   }
+
   // Return client
   private createClient(): MqttClient {
     const options: IClientOptions = getClientOptions(this.record)
     return mqtt.connect(this.connectUrl, options)
   }
+
   // Cancel connect
   private cancel() {
     this.connectLoading = false
     this.client.end!(true)
     this.retryTimes = 0
   }
+
   // Disconnect
   private disconnect(): boolean | void {
     if (!this.client.connected) {
@@ -869,6 +894,7 @@ export default class ConnectionsDetail extends Vue {
       this.$emit('reload')
     })
   }
+
   // Connect callback
   private onConnect() {
     this.connectLoading = false
@@ -887,6 +913,7 @@ export default class ConnectionsDetail extends Vue {
     this.setShowClientInfo(false)
     this.$emit('reload')
   }
+
   // Error callback
   private onError(error: string) {
     let msgTitle = this.$t('connections.connectFailed') as string
@@ -905,6 +932,7 @@ export default class ConnectionsDetail extends Vue {
     })
     this.$emit('reload')
   }
+
   // Reconnect callback
   private onReConnect() {
     if (!this.record.reconnect) {
@@ -937,15 +965,18 @@ export default class ConnectionsDetail extends Vue {
       }
     }
   }
+
   // Close connection callback
   private onClose() {
     this.connectLoading = false
   }
+
   // Search message
   private async searchMessage(oneMessage: MessageModel): Promise<boolean> {
     const res = await matchMultipleSearch([oneMessage], this.searchParams)
     return res && res.length ? true : false
   }
+
   // Scroll to page bottom
   private scrollToBottom = () => {
     const timer = setTimeout(() => {
@@ -959,6 +990,7 @@ export default class ConnectionsDetail extends Vue {
       clearTimeout(timer)
     }, 100)
   }
+
   // Set script
   private handleSetScript(script: ScriptModel, applyType: MessageType) {
     const currentScript: ScriptState = {
@@ -968,11 +1000,13 @@ export default class ConnectionsDetail extends Vue {
     this.setScript({ currentScript })
     this.$message.success(this.$t('script.startScript') as string)
   }
+
   // Remove script
   private removeScript() {
     this.setScript({ currentScript: null })
     this.$message.success(this.$t('script.stopScirpt') as string)
   }
+
   // Recevied message
   private onMessageArrived(id: string) {
     return (topic: string, payload: Buffer, packet: SubscriptionModel) => {
@@ -1037,10 +1071,12 @@ export default class ConnectionsDetail extends Vue {
       this.scrollToBottom()
     }
   }
+
   // Set timed message success
   private setTimerSuccess(time: number) {
     this.sendFrequency = time
   }
+
   // Set timed message
   private sendMessage(message: MessageModel, type: PayloadType): void {
     this.sendOneMessage(message, type)
@@ -1049,6 +1085,7 @@ export default class ConnectionsDetail extends Vue {
       this.timedSendMessage(this.sendFrequency, message, type)
     }
   }
+
   // Set timed message
   private timedSendMessage(time: number, message: MessageModel, type: PayloadType) {
     this.stopTimedSend()
@@ -1059,6 +1096,7 @@ export default class ConnectionsDetail extends Vue {
       this.sendOneMessage(Object.assign(oneMessage, { mid }), type)
     }, time * 1000)
   }
+
   // Send one message
   private sendOneMessage(message: MessageModel, type: PayloadType): void | boolean {
     if (!this.client.connected) {
@@ -1152,6 +1190,10 @@ export default class ConnectionsDetail extends Vue {
       }
       if (receiveType === 'JSON') {
         validJSONType(receiveValue.toString(), this.$t('connections.receivedMsg'))
+      }
+      if (receiveType === 'Iot') {
+        // change private protocol
+        return IotFormatUtil.formatData(receiveValue)
       }
       return receiveValue.toString()
     }
@@ -1283,49 +1325,61 @@ export default class ConnectionsDetail extends Vue {
 .connections-detail {
   .connections-topbar {
     border-bottom: 1px solid var(--color-border-default);
+
     .connections-info {
       background-color: var(--color-bg-normal);
+
       .topbar {
         border-bottom: 0px;
         -webkit-app-region: drag;
       }
+
       .connection-head {
         display: flex;
+
         .offline {
           color: var(--color-text-light);
         }
+
         a.collapse-btn {
           font-size: 18px;
           float: right;
           margin-left: 12px;
           margin-top: -1px;
         }
+
         @include collapse-btn-transform(90deg, -90deg);
+
         .connection-message-count {
           top: 3px;
           left: 10px;
         }
       }
+
       .connection-tail {
         i {
           font-size: 18px;
         }
+
         .remove-script-btn,
         .disconnect-btn,
         .stop-interval-btn {
           margin-right: 12px;
           color: var(--color-second-red);
         }
+
         .edit-btn,
         .new-window-btn {
           margin-right: 12px;
         }
+
         .edit-btn {
           &.disabled {
             cursor: not-allowed;
             color: var(--color-text-light);
           }
         }
+
         .el-dropdown.connection-oper {
           a {
             width: 24px;
@@ -1336,35 +1390,43 @@ export default class ConnectionsDetail extends Vue {
           }
         }
       }
+
       .connection-info {
         padding: 0 16px;
       }
     }
+
     .connections-search {
       padding: 13px 16px 12px 16px;
       height: auto;
       background-color: var(--color-bg-normal);
+
       &.topbar {
         border-bottom: 0px;
         min-height: 0px;
       }
+
       .el-input {
         .el-input__inner {
           background: var(--color-bg-primary);
         }
       }
+
       .content-search {
         margin: 0 19px 0 20px;
       }
+
       .search-btn {
         color: var(--color-text-default);
         margin-right: 10px;
+
         .icon-search,
         .el-icon-loading {
           font-size: 18px;
           line-height: 32px;
         }
       }
+
       .el-icon-circle-close {
         font-size: 16px;
         color: var(--color-text-default);
@@ -1375,6 +1437,7 @@ export default class ConnectionsDetail extends Vue {
   .connections-detail-main {
     height: 100%;
     transition: all 0.5s;
+
     .connections-body {
       .filter-bar {
         padding: 12px 16px;
@@ -1384,26 +1447,32 @@ export default class ConnectionsDetail extends Vue {
         right: 0;
         z-index: 1;
         transition: all 0.4s;
+
         .subs-title {
           color: var(--color-text-title);
           position: absolute;
           top: 15px;
         }
+
         .subs-btn {
           position: relative;
           top: 1px;
           left: 3px;
+
           .icon-zhedie {
             display: inline-block;
             transform: rotate(180deg);
           }
         }
+
         .message-type {
           @include flex-space-between;
+
           .received-type-select {
             width: 110px;
             margin-left: 245px;
           }
+
           .icon-tip {
             position: absolute;
             left: 239px;
@@ -1413,6 +1482,7 @@ export default class ConnectionsDetail extends Vue {
         }
       }
     }
+
     .connections-footer {
       transition: all 0.4s ease;
       position: fixed;
@@ -1423,28 +1493,35 @@ export default class ConnectionsDetail extends Vue {
     }
   }
 }
+
 .el-popper {
   li.delete-item {
     color: var(--color-second-red);
+
     &:hover {
       color: var(--color-second-red);
       background: var(--color-third-red);
     }
   }
+
   i {
     font-size: 16px;
   }
 }
+
 .message-popover {
   .popover-item {
     margin-top: 10px;
+
     &:last-child {
       margin-bottom: 0px;
     }
+
     label,
     span {
       color: var(--color-text-default);
     }
+
     label {
       margin-right: 8px;
     }

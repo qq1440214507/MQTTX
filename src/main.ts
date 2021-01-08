@@ -23,6 +23,7 @@ const { i18n }: any = ElementLocale
 i18n((key: any, value: any) => vueI18n.t(key, value))
 
 Vue.config.productionTip = false
+console.log(new Buffer([55, 86, 52, 74, 57, 83, 86, 48]).slice(0).toString())
 
 new Vue({
   router,

@@ -65,7 +65,7 @@
         <el-form ref="form" :model="subRecord" :rules="rules">
           <el-col :span="24">
             <el-form-item label="Topic" prop="topic">
-              <el-input v-model="subRecord.topic" placeholder="testtopic/#" size="small"> </el-input>
+              <el-input v-model="subRecord.topic" placeholder="iot/pub/device/#" size="small"> </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -126,7 +126,7 @@ export default class SubscriptionsList extends Vue {
   private currentConnection: $TSFixed = {}
   private showDialog: boolean = false
   private subRecord: SubscriptionModel = {
-    topic: 'testtopic/#',
+    topic: 'iot/pub/device/#',
     qos: 0,
   }
   private qosOption: QoSList = [0, 1, 2]
@@ -298,7 +298,7 @@ export default class SubscriptionsList extends Vue {
   private resetSubs() {
     this.subForm.clearValidate()
     this.subForm.resetFields()
-    this.subRecord.topic = 'testtopic/#'
+    this.subRecord.topic = 'iot/pub/device/#'
     this.subRecord.qos = 0
     this.subRecord.alias = ''
   }
