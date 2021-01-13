@@ -25,8 +25,11 @@ class IotFormatUtil {
     this.map.set(protocol.matchCmd, protocol)
   }
 
-  formatData(buffer: Buffer, showUwb: boolean = true): string {
-    if (buffer[22] == 81 && showUwb) {
+  formatData(buffer: Buffer, showUwb: boolean = true): string | undefined {
+    if (buffer[22] == 81) {
+      if (!showUwb) {
+        return undefined
+      }
       return this.uwbProtocol.format(buffer)
     }
     let iProtocol: IProtocol | undefined = this.map.get(IotProtocolUtil.byteToShort(buffer, 27))

@@ -1011,6 +1011,9 @@ export default class ConnectionsDetail extends Vue {
   private onMessageArrived(id: string) {
     return (topic: string, payload: Buffer, packet: SubscriptionModel) => {
       const convertPayload = this.convertPayloadByType(payload, this.receivedMsgType, 'receive') as string
+      if (convertPayload == undefined) {
+        return
+      }
       const receviedPayload = this.convertPayloadByScript(convertPayload, 'publish')
       const receivedMessage: MessageModel = {
         mid: uuidv4(),
@@ -1118,6 +1121,9 @@ export default class ConnectionsDetail extends Vue {
     }
     const convertPayload = this.convertPayloadByScript(payload, 'received')
     const sendPayload = this.convertPayloadByType(convertPayload, type, 'publish')
+    if (sendPayload == undefined) {
+      return
+    }
     this.client.publish!(topic, sendPayload, { qos, retain }, (error: Error) => {
       if (error) {
         const errorMsg = error.toString()
@@ -1165,7 +1171,11 @@ export default class ConnectionsDetail extends Vue {
   }
 
   // Convert payload by type
-  private convertPayloadByType(value: Buffer | string, type: PayloadType, way: 'publish' | 'receive'): Buffer | string {
+  private convertPayloadByType(
+    value: Buffer | string,
+    type: PayloadType,
+    way: 'publish' | 'receive',
+  ): Buffer | string | undefined {
     const validJSONType = (jsonValue: string, warnMessage: TranslateResult) => {
       try {
         JSON.parse(jsonValue)
