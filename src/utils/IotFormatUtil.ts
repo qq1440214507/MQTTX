@@ -6,12 +6,14 @@ import { TemperatureProtocol } from '@/protocol/TemperatureProtocol'
 import { HatStateProtocol } from '@/protocol/HatStateProtocol'
 import { DropProtocol } from '@/protocol/DropProtocol'
 import { GroupVoiceProtocol } from '@/protocol/GroupVoiceProtocol'
+import { UwbProtocol } from '@/protocol/UwbProtocol'
 
 class IotFormatUtil {
   private map: Map<number, IProtocol>
-
+  private uwbProtocol: UwbProtocol
   constructor() {
     this.map = new Map<number, IProtocol>()
+    this.uwbProtocol = new UwbProtocol()
     this.addProtocol(new GpsProtocol())
     this.addProtocol(new HeartRateProtocol())
     this.addProtocol(new TemperatureProtocol())
@@ -23,7 +25,10 @@ class IotFormatUtil {
     this.map.set(protocol.matchCmd, protocol)
   }
 
-  formatData(buffer: Buffer): string {
+  formatData(buffer: Buffer, showUwb: boolean = true): string {
+    if (buffer[22] == 81 && showUwb) {
+      return this.uwbProtocol.format(buffer)
+    }
     let iProtocol: IProtocol | undefined = this.map.get(IotProtocolUtil.byteToShort(buffer, 27))
     if (iProtocol != undefined) {
       return iProtocol.format(buffer)

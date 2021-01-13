@@ -13,7 +13,7 @@ declare global {
 
   type Protocol = 'ws' | 'wss' | 'mqtt' | 'mqtts'
 
-  type PayloadType = 'Plaintext' | 'Base64' | 'JSON' | 'Hex' | 'Iot'
+  type PayloadType = 'Plaintext' | 'Base64' | 'JSON' | 'Hex' | 'Iot' | 'IotWithoutUwb'
 
   type VueForm = Vue & {
     validate: (validate: (valid: boolean) => void) => void

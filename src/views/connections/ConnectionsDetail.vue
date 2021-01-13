@@ -414,7 +414,7 @@ export default class ConnectionsDetail extends Vue {
     '3.1.1': 4,
     '5.0': 5,
   }
-  private payloadOptions: PayloadType[] = ['Iot', 'Plaintext', 'Base64', 'JSON', 'Hex']
+  private payloadOptions: PayloadType[] = ['Iot', 'IotWithoutUwb', 'Plaintext', 'Base64', 'JSON', 'Hex']
   private showContextmenu: boolean = false
   private selectedMessage: MessageModel | null = null
   private contextmenuConfig: ContextmenuModel = {
@@ -1191,9 +1191,9 @@ export default class ConnectionsDetail extends Vue {
       if (receiveType === 'JSON') {
         validJSONType(receiveValue.toString(), this.$t('connections.receivedMsg'))
       }
-      if (receiveType === 'Iot') {
+      if (receiveType.startsWith('Iot')) {
         // change private protocol
-        return IotFormatUtil.formatData(receiveValue)
+        return IotFormatUtil.formatData(receiveValue, receiveType == 'Iot')
       }
       return receiveValue.toString()
     }
